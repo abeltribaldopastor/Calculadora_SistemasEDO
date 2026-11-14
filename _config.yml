@@ -1,0 +1,4 @@
+# Ajuste para GitHub Pages: publicar motor/__init__.py
+# (por defecto se esconden los archivos que empiezan por guion bajo).
+include:
+  - "__init__.py"
