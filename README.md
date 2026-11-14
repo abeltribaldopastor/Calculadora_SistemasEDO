@@ -103,29 +103,6 @@ python -m http.server 8000
 y abrir <http://localhost:8000>. El botón discreto **Tests** del pie de página ejecuta los
 mismos 9 casos dentro del navegador.
 
----
-
-## Publicarla gratis en GitHub Pages
-
-1. Crea un repositorio en GitHub (por ejemplo `pizarra-edos`) y sube **todos** los archivos
-   de esta carpeta, incluido `.nojekyll` (está vacío a propósito: hace que GitHub sirva los
-   archivos tal cual).
-   ```bash
-   git init
-   git add .
-   git commit -m "Pizarra de sistemas de EDOs"
-   git branch -M main
-   git remote add origin https://github.com/TU_USUARIO/pizarra-edos.git
-   git push -u origin main
-   ```
-2. En GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a branch**,
-   rama `main`, carpeta `/ (root)` → **Save**.
-3. Al cabo de un minuto la web estará en `https://TU_USUARIO.github.io/pizarra-edos/`.
-
-Cada vez que hagas `git push`, la web se actualiza sola.
-
----
-
 ## Privacidad
 
 Sin cookies, sin analítica y sin rastreadores. Todo el cálculo se hace en el navegador de
