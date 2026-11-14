@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pizarra de sistemas de EDOs · Abel Tribaldo</title>
+  <meta name="author" content="Abel Tribaldo">
+  <meta name="description" content="Calculadora paso a paso de sistemas lineales de ecuaciones diferenciales con coeficientes constantes: autovectores, Cayley-Hamilton y matrices constituyentes, explicados como en una pizarra de clase.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pizarra de sistemas de EDOs · Abel Tribaldo">
+  <meta property="og:description" content="Resuelve dy/dt = Ây + f(t) paso a paso, con los métodos de Mètodes Matemàtics I: autovectores, Cayley-Hamilton y matrices constituyentes.">
+  <meta name="theme-color" content="#14221b">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- La portada se ve desde el primer instante (sin parpadeo) si no se ha visto en esta pestaña -->
+  <script>try{if(sessionStorage.getItem("pizarra.portadaVista")!=="1")document.documentElement.classList.add("con-portada")}catch(e){document.documentElement.classList.add("con-portada")}</script>
+
+  <!-- Letra manuscrita (Google Fonts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+
+  <!-- KaTeX para las fórmulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <link rel="stylesheet" href="estilo.css">
+  <script defer src="portada.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <!-- ============ PORTADA (solo al abrir la web) ============ -->
+  <div id="portada" class="portada superficie" tabindex="-1" role="button" aria-label="Empezar">
+    <div class="portada-dibujos" id="portada-dibujos"></div>
+    <p class="portada-pista" id="portada-pista"></p>
+    <div class="borrador portada-borrador" id="portada-borrador" hidden></div>
+  </div>
+
+  <header class="cabecera">
+    <h1>Pizarra de sistemas de EDOs</h1>
+    <p class="autor">por Abel Tribaldo</p>
+    <p class="ecuacion-cabecera" data-tex="\dfrac{d\vec y}{dt}=\hat A\,\vec y(t)+\vec f(t)">dy/dt = Ây + f(t)</p>
+  </header>
+
+  <main class="contenido">
+    <!-- ============ DATOS ============ -->
+    <section class="panel superficie" aria-labelledby="titulo-datos">
+      <h2 id="titulo-datos">Datos del sistema</h2>
+
+      <div class="fila-control">
+        <span class="etiqueta">Dimensión <i>n</i>:</span>
+        <div class="grupo-botones" id="selector-n" role="group" aria-label="Dimensión">
+          <button type="button" data-n="2" class="activo">2</button>
+          <button type="button" data-n="3">3</button>
+          <button type="button" data-n="4">4</button>
+          <button type="button" data-n="5">5</button>
+        </div>
+      </div>
+
+      <div class="fila-control">
+        <span class="etiqueta">Tipo:</span>
+        <div class="grupo-botones" id="selector-tipo" role="group" aria-label="Tipo de sistema">
+          <button type="button" data-tipo="homogeneo" class="activo">Homogéneo (f = 0)</button>
+          <button type="button" data-tipo="no_homogeneo">No homogéneo</button>
+        </div>
+      </div>
+
+      <div class="matrices">
+        <div class="bloque-matriz">
+          <span class="nombre-matriz" data-tex="\hat A =">Â =</span>
+          <div class="parentesis"><div class="cuadricula" id="cuadricula-A"></div></div>
+        </div>
+        <div class="bloque-matriz" id="bloque-f" hidden>
+          <span class="nombre-matriz" data-tex="\vec f(t) =">f(t) =</span>
+          <div class="parentesis"><div class="cuadricula columna" id="vector-f"></div></div>
+        </div>
+      </div>
+
+      <div class="fila-control">
+        <span class="etiqueta">Solución:</span>
+        <div class="grupo-botones" id="selector-modo" role="group" aria-label="Modo de solución">
+          <button type="button" data-modo="general" class="activo">General</button>
+          <button type="button" data-modo="pvi">Valores iniciales (PVI)</button>
+        </div>
+      </div>
+
+      <div class="matrices" id="bloque-pvi" hidden>
+        <div class="bloque-matriz">
+          <span class="nombre-matriz" data-tex="t_0 =">t₀ =</span>
+          <input class="celda" id="campo-t0" value="0" autocomplete="off" spellcheck="false" aria-label="t0">
+        </div>
+        <div class="bloque-matriz">
+          <span class="nombre-matriz" data-tex="\vec y(t_0) =">y(t₀) =</span>
+          <div class="parentesis"><div class="cuadricula columna" id="vector-y0"></div></div>
+        </div>
+      </div>
+
+      <p class="aviso-entrada" id="aviso-entrada" role="alert" hidden></p>
+      <p class="ayuda">Admite enteros, fracciones (<code>-3/4</code>), decimales (<code>0.5</code>) y
+        <code>sqrt(2)</code>, <code>pi</code>. En f(t): <code>t^2</code>, <code>e^(-2t)</code>,
+        <code>cos(2t)</code>, <code>t*exp(t)</code>…</p>
+
+      <div class="acciones">
+        <button type="button" class="boton-principal" id="boton-resolver" disabled>Preparando…</button>
+        <button type="button" class="boton-secundario" id="boton-cancelar" hidden>Cancelar</button>
+      </div>
+
+      <h3 class="titulo-ejemplos">Ejemplos</h3>
+      <div class="ejemplos" id="ejemplos"></div>
+    </section>
+
+    <!-- ============ PIZARRA ============ -->
+    <section class="pizarra-marco" aria-labelledby="titulo-pizarra">
+      <div class="pizarra superficie">
+        <div class="barra-pizarra">
+          <h2 id="titulo-pizarra">Pizarra</h2>
+          <span class="contador solo-scroll" id="contador"></span>
+          <div class="controles">
+            <button type="button" id="boton-vista" title="Cambiar entre diapositivas y scroll">Vista: diapositivas</button>
+            <button type="button" id="boton-siguiente" class="solo-scroll" disabled>Siguiente paso</button>
+            <button type="button" id="boton-todos" class="solo-scroll" disabled>Ver todos los pasos</button>
+            <button type="button" id="boton-verificar" disabled data-tex="\text{Verificar }\dot{\vec y}=\hat A\vec y+\vec f">Comprobar solución</button>
+            <button type="button" id="boton-limpiar">Limpiar<span class="largo"> pizarra</span></button>
+          </div>
+        </div>
+
+        <div id="carga" class="carga">
+          <div class="tiza-cargando" aria-hidden="true"></div>
+          <p class="carga-titulo">Preparando la tiza…</p>
+          <p class="carga-estado" id="carga-estado">Descargando Python y SymPy en tu navegador (la primera vez tarda 10–30 s; después queda en caché).</p>
+        </div>
+
+        <div id="pasos" class="pasos" aria-live="polite">
+          <p class="pizarra-vacia" id="pizarra-vacia">Escribe la matriz Â (o elige un ejemplo) y pulsa <b>Resolver</b>.</p>
+        </div>
+
+<p class="pista-girar" id="pista-girar" hidden>&#8635; Gira el móvil para ver esta fórmula entera (o deslízala dentro de su recuadro).</p>
+
+        <nav class="nav-diapos" id="nav-diapos" aria-label="Navegación entre pasos" hidden>
+          <button type="button" class="flecha-diapo" id="diapo-anterior" aria-label="Paso anterior">&#8592;</button>
+          <div class="nav-centro">
+            <span class="nav-contador" id="nav-contador"></span>
+            <span class="nav-parte" id="nav-parte"></span>
+            <details class="saltar" id="saltar">
+              <summary>Saltar a…</summary>
+              <div class="lista-saltar" id="lista-saltar"></div>
+            </details>
+          </div>
+          <button type="button" class="flecha-diapo" id="diapo-siguiente" aria-label="Paso siguiente">&#8594;</button>
+        </nav>
+
+      </div>
+      <div class="repisa" aria-hidden="true">
+        <span class="tiza tiza-blanca"></span>
+        <span class="tiza tiza-amarilla"></span>
+        <span class="tiza tiza-azul"></span>
+        <span class="tiza tiza-menta"></span>
+        <span class="tiza tiza-coral"></span>
+        <span class="borrador"></span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <p>© 2026 Abel Tribaldo</p>
+    <p>Los métodos siguen el temario de Mètodes Matemàtics I (Universitat de València). Es una
+      herramienta de apoyo al estudio, no un sustituto de hacer los ejercicios.</p>
+    <p class="pie-discreto">Sin cookies ni analítica. Todo el cálculo se hace en tu navegador.
+      <button type="button" id="boton-tests" class="enlace-boton">Tests</button></p>
+  </footer>
+</body>
+</html>
